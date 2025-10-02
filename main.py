@@ -7,6 +7,10 @@ import models, schemas
 models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
+@app.get("/")
+def root():
+    return {"message": "Welcome to Therapy FastAPI! Visit /docs for API documentation."}
+
 # Create new therapist
 @app.post("/therapists", response_model=schemas.Therapist)
 def create_therapist(therapist: schemas.TherapistCreate, db: Session = Depends(get_db)):
