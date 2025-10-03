@@ -1,6 +1,6 @@
-# Run `fastapi dev main.py`
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from database import engine, get_db
 import models, schemas
 
@@ -25,6 +25,17 @@ def create_therapist(therapist: schemas.TherapistCreate, db: Session = Depends(g
 def get_all_therapists(db: Session = Depends(get_db)):
     return db.query(models.Therapist).all()
 
+# Search therapists by name, starting with input letter
+@app.get("/therapists/search", response_model=list[schemas.Therapist])
+def search_therapist(query: str | None = None, db: Session = Depends(get_db)):
+    if not query:
+        raise HTTPException(status_code=400, detail="Query parameter is required")
+    
+    result = db.query(models.Therapist).filter(
+        func.lower(models.Therapist.name).like(query.lower() + "%")
+    )
+    return result;
+
 # Get specific therapist by id
 @app.get("/therapists/{therapist_id}", response_model=schemas.Therapist)
 def get_therapist(therapist_id: int, db: Session = Depends(get_db)):
@@ -33,6 +44,7 @@ def get_therapist(therapist_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Therapist not found")
     return therapist
 
+# Get list of patients for specific therapist
 @app.get("/therapists/{therapist_id}/patients", response_model=list[schemas.PatientInfo])
 def get_patients_for_therapist(therapist_id: int, db: Session = Depends(get_db)):
     therapist = db.get(models.Therapist, therapist_id)
